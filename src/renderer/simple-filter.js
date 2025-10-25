@@ -6,7 +6,9 @@ let currentFilterConfig = null;
 
 async function loadFilterConfigs() {
     try {
+        console.log('🔧 SimpleFilter: Loading filter configs...');
         filterConfigs = await window.electronAPI.getAllFilterConfigs() || [];
+        console.log('🔧 SimpleFilter: Loaded configs:', filterConfigs);
         displayFilterConfigs();
         console.log('✅ Filter configs loaded successfully:', filterConfigs.length, 'configs');
     } catch (error) {
@@ -121,6 +123,15 @@ function loadConfigToForm(conditions) {
 }
 
 function showSimpleFilterBuilder() {
+    console.log('🔧 showSimpleFilterBuilder called');
+    
+    // Kiểm tra xem có modal nào đã tồn tại không
+    const existingModal = document.querySelector('.simple-filter-modal');
+    if (existingModal) {
+        console.log('🔧 Modal already exists, removing it');
+        existingModal.remove();
+    }
+    
     // Tạo modal để tạo filter config
     const modal = document.createElement('div');
     modal.className = 'simple-filter-modal';
@@ -246,13 +257,26 @@ function showSimpleFilterBuilder() {
     document.head.appendChild(style);
     document.body.appendChild(modal);
     
+    console.log('🔧 Modal created and added to DOM');
+    
     // Display current conditions
     displayCurrentConditions();
+    
+    // Focus on name input
+    setTimeout(() => {
+        const nameInput = document.getElementById('config-name');
+        if (nameInput) {
+            nameInput.focus();
+        }
+    }, 100);
 }
 
 function displayCurrentConditions() {
+    console.log('🔧 displayCurrentConditions called');
     const container = document.getElementById('current-conditions-display');
     const conditions = getCurrentFilterConditions();
+    
+    console.log('🔧 Current conditions:', conditions);
     
     if (Object.keys(conditions).length === 0) {
         container.innerHTML = '<p style="color: #999; font-style: italic;">Chưa có điều kiện nào được thiết lập</p>';
@@ -290,11 +314,13 @@ function formatPrice(price) {
 }
 
 function getCurrentFilterConditions() {
+    console.log('🔧 getCurrentFilterConditions called');
     const conditions = {};
     
     // Commission conditions
     const commissionMin = document.getElementById('commission-min').value;
     const commissionMax = document.getElementById('commission-max').value;
+    console.log('🔧 Commission values:', { commissionMin, commissionMax });
     if (commissionMin || commissionMax) {
         conditions.commission = {};
         if (commissionMin) conditions.commission.min = parseFloat(commissionMin);
@@ -304,6 +330,7 @@ function getCurrentFilterConditions() {
     // Price conditions
     const priceMin = document.getElementById('price-min').value;
     const priceMax = document.getElementById('price-max').value;
+    console.log('🔧 Price values:', { priceMin, priceMax });
     if (priceMin || priceMax) {
         conditions.price = {};
         if (priceMin) conditions.price.min = parseInt(priceMin);
@@ -313,18 +340,24 @@ function getCurrentFilterConditions() {
     // Stock conditions
     const stockMin = document.getElementById('stock-min').value;
     const stockMax = document.getElementById('stock-max').value;
+    console.log('🔧 Stock values:', { stockMin, stockMax });
     if (stockMin || stockMax) {
         conditions.stock = {};
         if (stockMin) conditions.stock.min = parseInt(stockMin);
         if (stockMax) conditions.stock.max = parseInt(stockMax);
     }
     
+    console.log('🔧 Final conditions:', conditions);
     return conditions;
 }
 
 async function saveFilterConfig() {
+    console.log('🔧 saveFilterConfig called');
     const name = document.getElementById('config-name').value.trim();
     const description = document.getElementById('config-description').value.trim();
+    
+    console.log('🔧 Config name:', name);
+    console.log('🔧 Config description:', description);
     
     if (!name) {
         showStatus('❌ Tên config không được để trống', 'error');
@@ -344,10 +377,13 @@ async function saveFilterConfig() {
     }
     
     try {
+        console.log('🔧 Calling createFilterConfig with:', { name, description, conditions });
         const success = await window.electronAPI.createFilterConfig(name, {
             description,
             conditions
         });
+        
+        console.log('🔧 createFilterConfig result:', success);
         
         if (success) {
             showStatus(`✅ Đã lưu filter config: ${name}`, 'success');
@@ -673,6 +709,19 @@ async function clearAllFilterConfigs() {
     } catch (error) {
         console.error('Error clearing filter configs:', error);
         showStatus('❌ Lỗi: ' + error.message, 'error');
+    }
+}
+
+// ==================== TEST FUNCTIONS ====================
+
+function testShowSimpleFilterBuilder() {
+    console.log('🧪 Test: showSimpleFilterBuilder function exists:', typeof showSimpleFilterBuilder);
+    console.log('🧪 Test: Calling showSimpleFilterBuilder...');
+    try {
+        showSimpleFilterBuilder();
+        console.log('🧪 Test: showSimpleFilterBuilder called successfully');
+    } catch (error) {
+        console.error('🧪 Test: Error calling showSimpleFilterBuilder:', error);
     }
 }
 

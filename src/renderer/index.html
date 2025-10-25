@@ -172,6 +172,17 @@
             color: white;
         }
         
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .btn-info:hover {
+            background: #138496;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(23, 162, 184, 0.4);
+        }
+        
         .btn-danger {
             background: #dc3545;
             color: white;
@@ -888,6 +899,29 @@
             border-radius: 3px;
         }
         
+        /* Copy button styles */
+        .copy-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            margin-left: 5px;
+        }
+        
+        .copy-btn:hover {
+            background: #218838;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+        }
+        
+        .copy-btn:active {
+            transform: translateY(0);
+        }
+        
         
         .stats-grid {
             display: grid;
@@ -1136,8 +1170,16 @@
                                 <div class="form-group">
                                     <button class="btn btn-primary" onclick="applyCurrentFilter()">🔍 Áp dụng lọc</button>
                                     <button class="btn btn-warning" onclick="clearCurrentFilter()">🧹 Xóa lọc</button>
-                                    <button class="btn btn-success" onclick="exportToExcel()">📊 Xuất Excel</button>
-                                    <button class="btn btn-secondary" onclick="copyAllLinks()">📋 Copy Links</button>
+                                    <button class="btn btn-success" onclick="exportToExcel()">📊 Xuất Excel (Tất cả)</button>
+                                    <button class="btn btn-secondary" onclick="copyAllLinks()">📋 Copy Links (Tất cả)</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Nút cho kết quả đã lọc -->
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <button class="btn btn-info" onclick="exportFilteredToExcel()">📊 Xuất Excel (Đã lọc)</button>
+                                    <button class="btn btn-primary" onclick="copyFilteredLinks()">📋 Copy Links (Đã lọc)</button>
                                 </div>
                             </div>
                             
@@ -1150,6 +1192,7 @@
                                 <div class="config-actions">
                                     <button class="btn btn-primary btn-small" onclick="showSimpleFilterBuilder()">💾 Lưu config hiện tại</button>
                                     <button class="btn btn-secondary btn-small" onclick="manageFilterConfigs()">⚙️ Quản lý configs</button>
+                                    <button class="btn btn-warning btn-small" onclick="testShowSimpleFilterBuilder()">🧪 Test Modal</button>
                                 </div>
                             </div>
                         </div>

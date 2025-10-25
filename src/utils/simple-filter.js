@@ -288,7 +288,7 @@ class SimpleFilter {
      * @returns {string} - ID duy nhất
      */
     generateFilterId() {
-        return CryptoUtils.generateId();
+        return 'simple_filter_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     }
     
     /**

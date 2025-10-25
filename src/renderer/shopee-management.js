@@ -568,9 +568,13 @@ function displayResults(results) {
                 </td>
                 <td style="text-align: center; font-weight: bold;">${finalStock}</td>
                 <td style="text-align: center;">
-                    <a href="${result.originalUrl || '#'}" target="_blank" style="color: #007bff; text-decoration: none;">
+                    <a href="${result.originalUrl || '#'}" target="_blank" style="color: #007bff; text-decoration: none; margin-right: 10px;">
                         🔗 Xem
                     </a>
+                    <button onclick="copySingleLink('${result.originalUrl || `https://shopee.vn/product/${result.shopId}/${result.itemId}`}')" 
+                            class="copy-btn" title="Copy link sản phẩm">
+                        📋 Copy
+                    </button>
                 </td>
             </tr>
         `;
@@ -657,7 +661,9 @@ function clearFilters() {
 
 async function loadFilterConfigs() {
     try {
-        allConfigs = await window.electronAPI.getAllConfigs();
+        console.log('🔧 Loading filter configs...');
+        allConfigs = await window.electronAPI.getAllFilterConfigs();
+        console.log('🔧 Loaded configs:', allConfigs);
         displayQuickConfigs();
         console.log('✅ Filter configs loaded successfully:', allConfigs.length, 'configs');
     } catch (error) {
@@ -672,10 +678,10 @@ async function loadFilterConfigs() {
 }
 
 function displayQuickConfigs() {
-    const container = document.getElementById('quick-config-buttons');
+    const container = document.getElementById('simple-filter-buttons');
     
     if (!container) {
-        console.log('Quick config buttons container not found');
+        console.log('Simple filter buttons container not found');
         return;
     }
     
@@ -709,7 +715,7 @@ async function applyQuickConfig(configId) {
     }
     
     try {
-        const filteredResults = await window.electronAPI.applyConfig(currentResults, configId);
+        const filteredResults = await window.electronAPI.applyFilterConfig(currentResults, configId);
         displayResults(filteredResults);
         
         // Update active button
@@ -752,7 +758,10 @@ async function createConfigFromCurrent() {
     };
     
     try {
-        const success = await window.electronAPI.createConfigFromCurrent(name, currentFilters);
+        const success = await window.electronAPI.createFilterConfig(name, {
+            description: `Config được tạo từ filter hiện tại`,
+            conditions: currentFilters
+        });
         if (success) {
             showStatus(`✅ Đã tạo config: ${name}`, 'success');
             loadFilterConfigs();
@@ -920,7 +929,7 @@ async function deleteConfig(configId) {
     }
     
     try {
-        const success = await window.electronAPI.deleteConfig(configId);
+        const success = await window.electronAPI.deleteFilterConfig(configId);
         if (success) {
             showStatus(`✅ Đã xóa config: ${config.name}`, 'success');
             loadFilterConfigs();
@@ -936,7 +945,38 @@ async function deleteConfig(configId) {
 
 async function createDefaultConfigs() {
     try {
-        await window.electronAPI.createDefaultConfigs();
+        // Tạo các config mặc định cho SimpleFilter
+        const defaultConfigs = [
+            {
+                name: 'Chỉ sản phẩm hợp lệ',
+                description: 'Hiển thị chỉ những sản phẩm hợp lệ',
+                conditions: {
+                    status: 'valid'
+                }
+            },
+            {
+                name: 'Hoa hồng cao (10%+)',
+                description: 'Hiển thị sản phẩm có hoa hồng từ 10% trở lên',
+                conditions: {
+                    commission: { min: 10 }
+                }
+            },
+            {
+                name: 'Giá dưới 100k',
+                description: 'Hiển thị sản phẩm có giá dưới 100k',
+                conditions: {
+                    price: { max: 100000 }
+                }
+            }
+        ];
+        
+        for (const config of defaultConfigs) {
+            await window.electronAPI.createFilterConfig(config.name, {
+                description: config.description,
+                conditions: config.conditions
+            });
+        }
+        
         showStatus('✅ Đã tạo configs mặc định', 'success');
         loadFilterConfigs();
         displayConfigList();
@@ -947,28 +987,12 @@ async function createDefaultConfigs() {
 }
 
 async function exportConfigs() {
-    const filePath = prompt('Nhập đường dẫn file để export (ví dụ: C:\\configs.json):');
-    if (!filePath) {
-        showStatus('❌ Đường dẫn file không được để trống', 'error');
-        return;
-    }
-    
-    if (!filePath.endsWith('.json')) {
-        showStatus('❌ File phải có định dạng .json', 'error');
-        return;
-    }
-    
-    if (filePath.length < 5) {
-        showStatus('❌ Đường dẫn file quá ngắn', 'error');
-        return;
-    }
-    
     try {
-        const success = await window.electronAPI.exportConfigs(filePath);
+        const success = await window.electronAPI.exportFilterConfigs();
         if (success) {
-            showStatus(`✅ Đã export configs đến: ${filePath}`, 'success');
+            showStatus('✅ Đã export filter configs thành công', 'success');
         } else {
-            showStatus('❌ Có lỗi khi export configs', 'error');
+            showStatus('❌ Có lỗi khi export filter configs', 'error');
         }
     } catch (error) {
         console.error('Error exporting configs:', error);
@@ -977,30 +1001,14 @@ async function exportConfigs() {
 }
 
 async function importConfigs() {
-    const filePath = prompt('Nhập đường dẫn file để import (ví dụ: C:\\configs.json):');
-    if (!filePath) {
-        showStatus('❌ Đường dẫn file không được để trống', 'error');
-        return;
-    }
-    
-    if (!filePath.endsWith('.json')) {
-        showStatus('❌ File phải có định dạng .json', 'error');
-        return;
-    }
-    
-    if (filePath.length < 5) {
-        showStatus('❌ Đường dẫn file quá ngắn', 'error');
-        return;
-    }
-    
     try {
-        const success = await window.electronAPI.importConfigs(filePath);
+        const success = await window.electronAPI.importFilterConfigs();
         if (success) {
-            showStatus(`✅ Đã import configs từ: ${filePath}`, 'success');
+            showStatus('✅ Đã import filter configs thành công', 'success');
             loadFilterConfigs();
             displayConfigList();
         } else {
-            showStatus('❌ Có lỗi khi import configs', 'error');
+            showStatus('❌ Có lỗi khi import filter configs', 'error');
         }
     } catch (error) {
         console.error('Error importing configs:', error);
@@ -1014,7 +1022,7 @@ async function clearAllConfigs() {
     }
     
     try {
-        const success = await window.electronAPI.clearAllConfigs();
+        const success = await window.electronAPI.clearAllFilterConfigs();
         if (success) {
             showStatus('✅ Đã xóa tất cả configs', 'success');
             loadFilterConfigs();
@@ -1083,6 +1091,69 @@ function exportToExcel() {
     }
 }
 
+// Export Excel cho kết quả đã lọc
+function exportFilteredToExcel() {
+    const tbody = document.getElementById('results-tbody');
+    if (!tbody) {
+        showStatus('❌ Không tìm thấy bảng kết quả', 'error');
+        return;
+    }
+    
+    const rows = tbody.querySelectorAll('tr');
+    if (rows.length === 0) {
+        showStatus('❌ Không có dữ liệu để xuất. Vui lòng phân tích sản phẩm trước', 'error');
+        return;
+    }
+    
+    try {
+        // Tạo dữ liệu CSV từ bảng hiện tại
+        const headers = ['Tên sản phẩm', '% Hoa hồng', 'Giá', 'Trạng thái', 'Vấn đề', 'Tồn kho', 'Link'];
+        const csvData = [headers.join(',')];
+        
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length >= 7) {
+                const productName = cells[0].textContent.trim().replace(/,/g, ';');
+                const commission = cells[1].textContent.trim();
+                const price = cells[2].textContent.trim();
+                const status = cells[3].textContent.trim();
+                const issues = cells[4].textContent.trim().replace(/,/g, ';');
+                const stock = cells[5].textContent.trim();
+                const linkCell = cells[6].querySelector('a');
+                const link = linkCell ? linkCell.href : '';
+                
+                csvData.push([
+                    `"${productName}"`,
+                    commission,
+                    `"${price}"`,
+                    status,
+                    `"${issues}"`,
+                    stock,
+                    link
+                ].join(','));
+            }
+        });
+        
+        // Tạo và tải file
+        const csvContent = csvData.join('\n');
+        const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `shopee_filtered_products_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showStatus(`✅ Đã xuất ${rows.length} sản phẩm đã lọc thành file Excel`, 'success');
+        
+    } catch (error) {
+        console.error('Error exporting filtered results to Excel:', error);
+        showStatus('❌ Lỗi khi xuất Excel đã lọc: ' + error.message, 'error');
+    }
+}
+
 function copyAllLinks() {
     if (!currentResults || currentResults.length === 0) {
         showStatus('❌ Không có dữ liệu để copy. Vui lòng phân tích sản phẩm trước', 'error');
@@ -1109,6 +1180,74 @@ function copyAllLinks() {
     } catch (error) {
         console.error('Error copying links:', error);
         showStatus('❌ Lỗi khi copy links: ' + error.message, 'error');
+    }
+}
+
+// Copy links cho kết quả đã lọc
+function copyFilteredLinks() {
+    const tbody = document.getElementById('results-tbody');
+    if (!tbody) {
+        showStatus('❌ Không tìm thấy bảng kết quả', 'error');
+        return;
+    }
+    
+    const rows = tbody.querySelectorAll('tr');
+    if (rows.length === 0) {
+        showStatus('❌ Không có dữ liệu để copy. Vui lòng phân tích sản phẩm trước', 'error');
+        return;
+    }
+    
+    try {
+        const links = [];
+        rows.forEach(row => {
+            const linkCell = row.querySelector('td:last-child a');
+            if (linkCell && linkCell.href) {
+                links.push(linkCell.href);
+            }
+        });
+        
+        if (links.length === 0) {
+            showStatus('❌ Không tìm thấy link nào trong kết quả hiện tại', 'error');
+            return;
+        }
+        
+        const linksText = links.join('\n');
+        
+        // Copy to clipboard
+        navigator.clipboard.writeText(linksText).then(() => {
+            showStatus(`✅ Đã copy ${links.length} links đã lọc vào clipboard`, 'success');
+        }).catch(err => {
+            console.error('Error copying to clipboard:', err);
+            // Fallback: hiển thị trong alert
+            alert('Links đã lọc:\n' + linksText);
+            showStatus('✅ Đã hiển thị links trong popup', 'success');
+        });
+        
+    } catch (error) {
+        console.error('Error copying filtered links:', error);
+        showStatus('❌ Lỗi khi copy links đã lọc: ' + error.message, 'error');
+    }
+}
+
+// Copy link của một sản phẩm cụ thể
+function copySingleLink(link) {
+    if (!link) {
+        showStatus('❌ Link không hợp lệ', 'error');
+        return;
+    }
+    
+    try {
+        navigator.clipboard.writeText(link).then(() => {
+            showStatus('✅ Đã copy link sản phẩm', 'success');
+        }).catch(err => {
+            console.error('Error copying single link:', err);
+            // Fallback: hiển thị trong alert
+            alert('Link sản phẩm:\n' + link);
+            showStatus('✅ Đã hiển thị link trong popup', 'success');
+        });
+    } catch (error) {
+        console.error('Error copying single link:', error);
+        showStatus('❌ Lỗi khi copy link: ' + error.message, 'error');
     }
 }
 
@@ -1179,16 +1318,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Handle page navigation
 function onShopeeManagementPageShow() {
+    console.log('🔧 onShopeeManagementPageShow called');
     if (window.electronAPI) {
         loadUserList();
         updateUserSelect();
         // Chỉ load filter configs nếu chưa có
         if (allConfigs.length === 0) {
+            console.log('🔧 Loading filter configs (allConfigs.length === 0)');
             loadFilterConfigs();
         }
         // Load simple filter configs instead of advanced filters
         if (typeof loadFilterConfigs === 'function') {
+            console.log('🔧 Calling loadFilterConfigs from simple-filter.js');
             loadFilterConfigs();
+        } else {
+            console.log('🔧 loadFilterConfigs function not found');
         }
     } else {
         console.log('electronAPI not ready in onShopeeManagementPageShow');
